@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "secure-mcp": {
+      "command": "python",
+      "args": ["-m", "secure_mcp.server"],
+      "env": {
+        "SECURE_MCP_POLICY": "/absolute/path/to/secure-mcp/policies/default.yaml",
+        "SECURE_MCP_AUDIT": "/absolute/path/to/secure-mcp/audit.jsonl",
+        "PYTHONPATH": "/absolute/path/to/secure-mcp/src"
+      }
+    }
+  }
+}

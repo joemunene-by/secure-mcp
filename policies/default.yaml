@@ -1,0 +1,40 @@
+version: 1
+
+# Default policy for secure-mcp.
+# Edit target_allowlist entries to match the hosts/networks you are AUTHORIZED to scan.
+# An empty or missing allowlist means the tool is effectively locked down for target-requiring tools.
+
+tools:
+  port_scan:
+    enabled: true
+    target_allowlist:
+      - "127.0.0.1"
+      - "localhost"
+      - "192.168.0.0/16"
+      - "10.0.0.0/8"
+    max_ports: 100
+    rate_limit:
+      per_minute: 10
+
+  dns_lookup:
+    enabled: true
+    target_allowlist:
+      - "*"
+    rate_limit:
+      per_minute: 60
+
+  metadata_scrub:
+    enabled: true
+    rate_limit:
+      per_minute: 30
+
+  vuln_scan:
+    enabled: true
+    target_allowlist: []  # explicit: no targets permitted until operator adds them
+    rate_limit:
+      per_minute: 5
+
+  hash_lookup:
+    enabled: true
+    rate_limit:
+      per_minute: 60

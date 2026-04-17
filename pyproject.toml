@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "secure-mcp"
+version = "0.1.0"
+description = "MCP server that exposes security tools to AI agents with policy gates, sandboxing, and audit trails."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Joe Munene" }]
+keywords = ["mcp", "security", "llm", "agent", "sandbox", "audit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+secure-mcp = "secure_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/joemunene-by/secure-mcp"
+Issues = "https://github.com/joemunene-by/secure-mcp/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/secure_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
