@@ -38,3 +38,24 @@ class AuditLog:
         with self._lock:
             with open(self.path, "a", encoding="utf-8") as f:
                 f.write(line + "\n")
+
+    def tail(self, n: int = 50) -> list[dict]:
+        """Return the last n entries (oldest first). Malformed lines are skipped."""
+        if n <= 0:
+            return []
+        with self._lock:
+            try:
+                with open(self.path, encoding="utf-8") as f:
+                    lines = f.readlines()
+            except FileNotFoundError:
+                return []
+        entries: list[dict] = []
+        for line in lines[-n:]:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return entries

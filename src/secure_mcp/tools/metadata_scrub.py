@@ -83,6 +83,9 @@ def _scrub_png(data: bytes) -> tuple[bytes, list[str]]:
     i = 8
     removed: list[str] = []
     while i < len(data):
+        if i + 8 > len(data):  # truncated trailer; keep the leftover bytes as-is
+            out.extend(data[i:])
+            break
         length = struct.unpack(">I", data[i : i + 4])[0]
         chunk_type = data[i + 4 : i + 8]
         chunk_end = i + 8 + length + 4  # length + type + data + CRC

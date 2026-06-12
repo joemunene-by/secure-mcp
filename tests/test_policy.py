@@ -66,6 +66,40 @@ def test_rate_limit(tmp_path):
         policy.check_rate_limit("dns_lookup")
 
 
+def test_target_allowlist_path_prefix(tmp_path):
+    allowed = tmp_path / "projects"
+    allowed.mkdir()
+    inside = allowed / "repo" / "src"
+    sibling = tmp_path / "projectsibling"
+    entry = str(allowed)
+
+    assert _target_matches(str(allowed), [entry])
+    assert _target_matches(str(inside), [entry])
+    assert not _target_matches(str(sibling), [entry])
+    assert not _target_matches(str(tmp_path), [entry])
+    # dotdot escape is resolved before matching
+    assert not _target_matches(str(allowed / ".." / "elsewhere"), [entry])
+
+
+def test_target_path_entry_does_not_match_hostnames():
+    assert not _target_matches("example.com", ["/tmp"])
+
+
+def test_default_policy_covers_all_registered_tools():
+    """Every tool the server registers must have a matching policy entry,
+    otherwise calls are denied as 'not configured' (regression: file_hash
+    was shipped as 'hash_lookup' in 0.1)."""
+    from pathlib import Path
+
+    from secure_mcp import tools as tools_pkg
+
+    default = Path(__file__).resolve().parents[1] / "policies" / "default.yaml"
+    data = yaml.safe_load(default.read_text())
+    configured = set(data["tools"])
+    registered = {getattr(tools_pkg, mod).NAME for mod in tools_pkg.__all__}
+    assert registered <= configured, f"missing policy entries: {registered - configured}"
+
+
 def test_tool_policy_from_dict_passthrough():
     tp = ToolPolicy.from_dict(
         {

@@ -105,6 +105,10 @@ def _target_matches(target: str, allowlist: list[str]) -> bool:
             continue
         if entry == "*":
             return True
+        if entry.startswith("/"):
+            if _path_matches(target, entry):
+                return True
+            continue
         if target_ip is not None:
             try:
                 if target_ip in ipaddress.ip_network(entry, strict=False):
@@ -119,3 +123,17 @@ def _target_matches(target: str, allowlist: list[str]) -> bool:
         if target.lower() == entry.lower():
             return True
     return False
+
+
+def _path_matches(target: str, entry: str) -> bool:
+    """Filesystem allowlist entry: the entry is a directory; the target must be
+    that directory or inside it. Both sides are resolved so `..` tricks and
+    symlinked aliases can't escape the allowlisted root."""
+    if not target.startswith("/") and not target.startswith("~"):
+        return False
+    try:
+        target_path = Path(target).expanduser().resolve()
+        entry_path = Path(entry).resolve()
+    except OSError:
+        return False
+    return target_path == entry_path or entry_path in target_path.parents

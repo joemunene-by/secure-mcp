@@ -4,7 +4,6 @@ import hashlib
 import socket
 import struct
 
-import pytest
 
 from secure_mcp.tools import dns_lookup, file_hash, metadata_scrub, port_scan, vuln_scan
 

@@ -42,6 +42,10 @@ async def _scan(host: str, ports: list[int], timeout: float, concurrency: int) -
 
 def scan(host: str, ports: list[int], *, timeout: float = 1.0, concurrency: int = 50) -> dict:
     """Run a TCP connect scan. Returns a dict with open_ports and resolved address."""
+    invalid = [p for p in ports if not 1 <= p <= 65535]
+    if invalid:
+        return {"host": host, "error": f"invalid ports (must be 1-65535): {invalid[:10]}"}
+
     try:
         resolved = socket.gethostbyname(host)
     except socket.gaierror as e:

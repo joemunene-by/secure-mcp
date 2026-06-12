@@ -2,7 +2,7 @@
 
 # secure-mcp
 
-**An MCP server that exposes security tools to AI agents — with policy gates, sandboxing, and audit trails.**
+**An MCP server that exposes security tools to AI agents, with policy gates, sandboxing, and audit trails.**
 
 Drop it into Claude Desktop, Cursor, or any MCP-compatible client and give your agent a _constrained_ security toolbox.
 Every call is checked against a YAML policy, run in a sandboxed subprocess when relevant, and written to an append-only audit log.
@@ -33,7 +33,7 @@ The policy is the source of truth. The LLM can't bypass what the runtime won't e
 
 ## What's included
 
-Five curated tools, each a clean reimplementation with no heavyweight dependencies:
+Seven curated tools, each a clean reimplementation with no heavyweight dependencies:
 
 | Tool | Purpose | Policy checks |
 | --- | --- | --- |
@@ -42,6 +42,10 @@ Five curated tools, each a clean reimplementation with no heavyweight dependenci
 | `sec_metadata_scrub` | Strip EXIF (JPEG) / tEXt (PNG) | rate limit |
 | `sec_vuln_scan` | Static secret/anti-pattern scan of a source tree | target allowlist (paths), rate limit |
 | `sec_file_hash` | md5/sha1/sha256/sha512/blake2b over a file | rate limit |
+| `sec_tls_inspect` | TLS cert summary: subject, issuer, SANs, expiry, protocol, cipher | target allowlist, rate limit |
+| `sec_http_headers` | Security header audit (HSTS, CSP, XFO, ...) with an A to F grade | target allowlist (URL hostname), rate limit |
+
+Plus one MCP resource: `audit://recent` exposes the last 50 audit entries, so the agent (and you, from the client) can review what was actually executed.
 
 ## Quickstart
 
@@ -77,7 +81,7 @@ Add `examples/claude_desktop_config.json` to your Claude Desktop config (update 
 }
 ```
 
-Restart Claude Desktop. The five `sec_*` tools appear in the tools panel.
+Restart Claude Desktop. The seven `sec_*` tools appear in the tools panel.
 
 ## Policy
 
@@ -95,7 +99,7 @@ tools:
       per_minute: 10
 ```
 
-- `target_allowlist` supports IPv4/IPv6, CIDR (`10.0.0.0/8`), and suffix wildcards (`*.example.com`). `*` matches everything — use sparingly.
+- `target_allowlist` supports IPv4/IPv6, CIDR (`10.0.0.0/8`), suffix wildcards (`*.example.com`), and, new in 0.2, absolute directory paths (`/home/me/projects`) for filesystem tools like `vuln_scan`. Path entries match the directory and anything inside it, with `..` and symlinks resolved before matching. `*` matches everything, so use it sparingly.
 - An empty or missing `target_allowlist` for a target-requiring tool denies **all** targets. Fail closed.
 - Point `SECURE_MCP_POLICY` at a different file to run multiple profiles (lab vs. prod-safe).
 
@@ -131,17 +135,17 @@ Each tool is gated by `_guard(name, target?)` → `check_enabled` → `check_tar
 
 ## Roadmap
 
-- `v0.2` — Docker-based sandbox profile, MCP resources for audit log tail, expanded tool set (traffic capture, TLS inspection).
-- `v0.3` — Policy DSL: per-role allowlists, time-of-day gates, cost budgets.
-- `v0.4` — Web dashboard for audit log + policy editing.
+- `v0.2` (shipped): MCP resource for the audit log tail, TLS inspection, HTTP security header audit, path allowlists.
+- `v0.3`: Docker-based sandbox profile, policy DSL with per-role allowlists, time-of-day gates, and cost budgets.
+- `v0.4`: Web dashboard for the audit log and policy editing, traffic capture tool.
 
 ## Related projects
 
 Built by [@joemunene-by](https://github.com/joemunene-by). Companion repos:
 
-- [`ghostguard`](https://github.com/joemunene-by/ghostguard) — policy-pipeline proxy for LLM tool calls
-- [`ghostsiem`](https://github.com/joemunene-by/ghostsiem) — SIGMA-based detection and alerting
-- [`ghostforensics`](https://github.com/joemunene-by/ghostforensics) — memory forensics automation
+- [`ghostguard`](https://github.com/joemunene-by/ghostguard): policy-pipeline proxy for LLM tool calls
+- [`ghostsiem`](https://github.com/joemunene-by/ghostsiem): SIGMA-based detection and alerting
+- [`ghostforensics`](https://github.com/joemunene-by/ghostforensics): memory forensics automation
 
 ## License
 

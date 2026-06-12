@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from urllib.parse import urlsplit
+
 from .audit import AuditLog
 from .policy import Policy, PolicyViolation
-from .tools import dns_lookup, file_hash, metadata_scrub, port_scan, vuln_scan
+from .tools import (
+    dns_lookup,
+    file_hash,
+    http_headers,
+    metadata_scrub,
+    port_scan,
+    tls_inspect,
+    vuln_scan,
+)
 
 
 DEFAULT_POLICY_PATH = "policies/default.yaml"
@@ -121,6 +132,45 @@ def build_server() -> FastMCP:
             return file_hash.hash_file(path, algorithms)
 
         return _run(file_hash.NAME, args, call)
+
+    @mcp.tool()
+    def sec_tls_inspect(host: str, port: int = 443) -> dict:
+        """Inspect the TLS certificate an allowlisted host presents.
+
+        Returns subject, issuer, SANs, validity window, days until expiry,
+        negotiated protocol and cipher. Accepts self-signed/expired certs,
+        since the goal is inspection, not trust validation.
+        """
+        args = {"host": host, "port": port}
+
+        def call() -> dict:
+            _guard(tls_inspect.NAME, args, target=host)
+            return tls_inspect.inspect(host, port)
+
+        return _run(tls_inspect.NAME, args, call)
+
+    @mcp.tool()
+    def sec_http_headers(url: str) -> dict:
+        """Audit security headers (HSTS, CSP, X-Frame-Options, ...) of an allowlisted host.
+
+        The policy allowlist is matched against the URL's hostname.
+        Redirects are reported, never followed.
+        """
+        args = {"url": url}
+
+        def call() -> dict:
+            hostname = urlsplit(url if "://" in url else f"https://{url}").hostname
+            if not hostname:
+                raise PolicyViolation(f"could not parse a hostname from '{url}'")
+            _guard(http_headers.NAME, args, target=hostname)
+            return http_headers.check(url)
+
+        return _run(http_headers.NAME, args, call)
+
+    @mcp.resource("audit://recent")
+    def audit_recent() -> str:
+        """The last 50 audit log entries as JSONL (oldest first)."""
+        return "\n".join(json.dumps(e, ensure_ascii=False) for e in audit.tail(50))
 
     return mcp
 
